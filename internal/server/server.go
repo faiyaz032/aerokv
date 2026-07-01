@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net"
+
+	"github.com/faiyaz032/aerokv/internal/protocol"
 )
 
 type Server struct {
@@ -44,10 +46,11 @@ func (s *Server) Start() error {
 func (s *Server) handleRequest(conn net.Conn) {
 	defer conn.Close()
 
-	reader := bufio.NewReader(conn)
+	reader := bufio.NewReaderSize(conn, protocol.MaxRESPLineSize)
+	parser := protocol.NewParser(reader)
 
 	for {
-		message, err := reader.ReadString('\n')
+		message, err := parser.Parse()
 		if err != nil {
 			if err == io.EOF {
 				fmt.Printf("Client disconnected: %s\n", conn.RemoteAddr().String())
